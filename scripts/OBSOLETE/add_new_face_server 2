@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+from face_recognition_ros_wrapper.srv import RegisterNewFace, RegisterNewFaceResponse
+from imutils import paths
+import rospy
+import cv2
+import face_recognition
+import pickle
+from collections import defaultdict
+
+
+def handle_register_new_face(req):
+	success = False
+	
+	imagepaths = list(paths.list_images(req.image_path))
+	knownEncodings = []
+	knownNames=[]
+	for (i, imagepath) in enumerate(imagepaths):
+		image = cv2.imread(imagepath)
+    		rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+
+		boxes = face_recognition.face_locations(rgb, model='hog')
+        	encodings = face_recognition.face_encodings(rgb, boxes)
+
+		for encoding in encodings:
+			knownEncodings.append(encoding)
+     			knownNames.append(req.person_name)
+
+
+	print("[INFO] serializing encodings...")
+	data = {"encodings": knownEncodings, "names": knownNames}
+	print("a")
+	f = open("encodings.pickle", "wb")
+	print("b")
+	f.write(pickle.dumps(data))
+	print("c")
+	f.close()
+	print("d")
+	success = True
+	print("e")
+
+
+	return RegisterNewFaceResponse(success)
+
+
+
+
+
+def register_new_face_server():
+    rospy.init_node("register_new_face_server")
+    print("z")
+    rospy.Service('register_new_face', RegisterNewFace, handle_register_new_face)
+    print("Ready to register new faces")
+    rospy.spin()
+
+
+if __name__ == "__main__":
+    register_new_face_server()

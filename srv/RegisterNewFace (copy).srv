@@ -1,0 +1,5 @@
+string image_path
+string person_name
+---
+bool success_status
+
